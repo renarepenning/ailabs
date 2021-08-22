@@ -11,7 +11,6 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
 """
 In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
@@ -100,7 +99,7 @@ def depthFirstSearch(problem):
         v = fringe.pop()
         #never expand a node whose state has been visited
         if v[0] not in visited:
-            visited += [v[0]]ffg
+            visited += [v[0]]
             #check if v's state is a goal state;
             if problem.isGoalState(v[0]):
                 return v[1]
@@ -175,6 +174,7 @@ def uniformCostSearch(problem):
 
     return False
 
+
 def nullHeuristic(state, problem=None):
     """
     A heuristic function estimates the cost from the current state to the nearest
@@ -185,10 +185,47 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    start= problem.getStartState()
+    fringe=util.PriorityQueue()
+    heur=heuristic(start,problem)
+    fringe.push((start,[],1),heur)
+    visitedStates=set()
+
+    while fringe.isEmpty()==False:
+        v=fringe.pop()
+       
+        if problem.isGoalState(v[0])==True:
+           return v[1] #return the path to the goal (current) state
+           
+        elif (v[0] not in visitedStates): #if v's state has been visited before, skip    
+            visitedStates.add(v[0])
+
+            #expand v, inserting resulting nodes into fringe
+            for i in problem.getSuccessors(v[0]):
+               
+                currentState=i[0] #current state being visited (child of v, visited after) to add to queue
+
+                currentPath=v[1] #path that already exists
+               
+                newPath=[i[1]] # direction from parent (v) to child
+               
+                pathToCurrent=currentPath+newPath #add direction from parent to child
+
+                cost=i[2] #cost of child being added to queue
+
+                totalcost=v[2]+i[2] #total cost of the entire path
+
+                newHeur=totalcost+ heuristic(i[0],problem) #total cost of path with new heuristic from expanded node
+
+                newNode=(currentState,pathToCurrent,totalcost)
+               
+                fringe.push(newNode,newHeur) #add new Node to the queue
+
+
 
 
 # Abbreviations
+
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch

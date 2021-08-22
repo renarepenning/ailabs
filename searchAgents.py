@@ -52,7 +52,7 @@ class GoWestAgent(Agent):
             return Directions.STOP
 
 #######################################################
-# This portion is written for you, but will only work #DF
+# This portion is written for you, but will only work #
 #       after you fill in parts of search.py          #
 #######################################################
 
@@ -285,24 +285,26 @@ class CornersProblem(search.SearchProblem):
             if not startingGameState.hasFood(*corner):
                 print('Warning: no food in corner ' + str(corner))
         self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
-        # Please add any code here which you would like to use
-        # in initializing the problem
-        "*** YOUR CODE HERE ***"
+        
 
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        cornersEaten = [] #we will represent cornersEaten with an empty list
+        return (self.startingPosition, cornersEaten)
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        #make sure that every corner we have is in state[1]
+        for c in self.corners:
+            if c not in state[1]:
+                return False
+        return True
+            
 
     def getSuccessors(self, state):
         """
@@ -319,12 +321,27 @@ class CornersProblem(search.SearchProblem):
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
+            x,y = state[0] # currentPosition
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
             "*** YOUR CODE HERE ***"
+            #get a list of coords of corners we have hit
+            corners_list = state[1]
+
+            # check if the action is legal
+            if not hitsWall:
+                # create a fresh copy of the corners so we can add a diff state to the new node
+                updated_state = corners_list
+                # check to see if our new position is in self.corners
+                if (nextx, nexty) in self.corners:
+                    #add corner that's been hit
+                    updated_state.append( (nextx,nexty) )
+
+                #create new state and a node to hold it
+                next_state = ((nextx,nexty), updated_state)
+                successors.append((next_state, action, 1))
+
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -357,10 +374,25 @@ def cornersHeuristic(state, problem):
     admissible (as well as consistent).
     """
     corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    pos = state[0]
+    corner_check = state[1]
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    heurs = []
+    
+    #look through list of all corners
+    for corner_coord in corners:
+        #check to see corners we haven't yet reached
+        if corner_coord not in corner_check:
+            # find manhattan distance from current pos to new corner
+            dist = util.manhattanDistance(pos, corner_coord)
+            # add to possible heuristics - later check if current is best
+            heurs.append(dist)
+
+    # check for a non-trivial heuristic
+    if len(heurs) != 0:
+        return max(heurs)
+    return 0 # default to trivial solution
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -425,6 +457,7 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchType = FoodSearchProblem
 
 def foodHeuristic(state, problem):
+    # Dot talked to Annie Donahue about this one,
     """
     Your heuristic for the FoodSearchProblem goes here.
 
@@ -453,8 +486,19 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    foodList=foodGrid.asList() #list of food coordinates
+    #paths from each position
+    heuristics=[]
+
+    if len(foodList)==0: #if no food left, theres no more dots to get!
+        return 0
+  
+    for i in foodList:
+        #add all possible heuristics 
+        heuristics.append(mazeDistance(position, i, problem.startingGameState))
+ 
+    #greatest possible path
+    return max(heuristics)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -478,14 +522,11 @@ class ClosestDotSearchAgent(SearchAgent):
         Returns a path (a list of actions) to the closest dot, starting from
         gameState.
         """
-        # Here are some useful elements of the startState
-        startPosition = gameState.getPacmanPosition()
-        food = gameState.getFood()
-        walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # greadily eats the closest dor
+        # search function that finds the closest dot --> BFS
+        return search.breadthFirstSearch(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -521,7 +562,8 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # goal state is finding any path to food
+        return self.food[x][y]
 
 def mazeDistance(point1, point2, gameState):
     """
